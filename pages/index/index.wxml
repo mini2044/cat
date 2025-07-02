@@ -1,0 +1,33 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="game-container" id="game-container">
+    <!-- 添加固定尺寸的备用值，确保即使数据绑定失败也有合理的尺寸 -->
+    <canvas type="2d" id="line-canvas" class="line-canvas" style="width: {{gridWidth || '100%'}}px; height: {{gridHeight || '300'}}px; display: block; border: 3px solid blue;" canvas-id="line-canvas"></canvas>
+    <view class="grid" style="width: {{gridWidth || '100%'}}px; height: {{gridHeight || '300'}}px;">
+      <view wx:for="{{grid}}" wx:for-item="row" wx:for-index="rowIndex" wx:key="rowIndex" class="row">
+        <view wx:for="{{row}}" wx:for-item="cell" wx:for-index="colIndex" wx:key="colIndex" 
+              class="cell {{cell.clicked ? 'clicked' : ''}}" 
+              style="width: {{cellSize}}px; height: {{cellSize}}px;"
+              data-row="{{rowIndex}}" data-col="{{colIndex}}" 
+              bindtap="handleSquareClick">
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="controls">
+    <image src="/pages/pis/start.jpg" class="control-button" bindtap="startGame"></image>
+    <image src="/pages/pis/pause.jpg" class="control-button" bindtap="pauseGame"></image>
+    <image src="/pages/pis/start2.jpg" class="control-button" bindtap="resumeGame"></image>
+    <image src="/pages/pis/end.jpg" class="control-button" bindtap="endGame"></image>
+  </view>
+
+  <view class="score-container">
+    <view class="score">
+      得分: {{score}}
+    </view>
+    <view class="distance">
+      {{distanceText || '距离: 0格'}}
+    </view>
+  </view>
+</view>

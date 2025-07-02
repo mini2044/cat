@@ -1,0 +1,105 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* 占满整个屏幕高度 */
+  min-height: 300px; /* 确保最小高度 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none; /* 移除边框 */
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.line-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  z-index: 10; /* 提高 z-index，确保在网格上方 */
+  background-color: transparent;
+  border: 3px solid red; /* 增加边框宽度，使其更明显 */
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.cell {
+  border: 1px solid #ccc;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+.cell.clicked {
+  background-color: #00ff00;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column; /* 垂直排列 */
+  align-items: center; /* 居中对齐 */
+  position: fixed;
+  top: 50%; /* 垂直居中 */
+  right: 10px; /* 靠右排列 */
+  transform: translateY(-50%); /* 精确垂直居中 */
+  background-color: transparent; /* 透明背景 */
+  z-index: 20; /* 确保在最上层 */
+}
+
+.control-button {
+  width: 50px; /* 设置按钮宽度 */
+  height: 50px; /* 设置按钮高度 */
+  margin: 10px 0; /* 设置垂直间距 */
+  border-radius: 50%; /* 圆形按钮 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* 添加阴影 */
+  cursor: pointer; /* 鼠标悬停时显示手型 */
+}
+
+.score-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  z-index: 10;
+}
+
+.score, .distance {
+  font-size: 18px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.score {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.distance {
+  color: #3498db;
+  font-weight: bold;
+}
