@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClickBox Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ClickBox Game 点击方块游戏</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>ClickBox Game</h1>
-    <div class="controls">
-        <button id="start-btn">Start Game</button>
-        <button id="pause-btn" disabled>Pause</button>
-        <button id="resume-btn" disabled>Resume</button>
-        <button id="end-btn" disabled>End Game</button>
-    </div>
-    <div id="info">
-        <p>Score: <span id="score">0</span></p>
-        <p>Distance: <span id="distance">0</span></p>
-    </div>
-    <div class="game-container" id="game-container">
-        <canvas id="line-canvas"></canvas>
-        <div class="grid-container" id="grid-container"></div>
+    <div class="main-container">
+        <header class="game-header">
+            <h1 class="game-title">ClickBox Game</h1>
+            <div class="game-info">
+                <p>Score: <span id="score">0</span></p>
+                <p>Distance: <span id="distance">0</span></p>
+            </div>
+            <div class="controls">
+                <button id="start-btn">开始游戏</button>
+                <button id="pause-btn" disabled>暂停</button>
+                <button id="resume-btn" disabled>继续</button>
+                <button id="end-btn" disabled>结束游戏</button>
+            </div>
+        </header>
+        <div class="game-container" id="game-container">
+            <canvas id="line-canvas"></canvas>
+            <div class="grid-container" id="grid-container"></div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
