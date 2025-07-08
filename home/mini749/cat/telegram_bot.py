@@ -29,24 +29,17 @@ def start(update: Update, context: CallbackContext) -> None:
 
 # 新增一个 play 命令处理函数
 def play(update: Update, context: CallbackContext) -> None:
+    """Sends a message with a button that opens the game URL."""
     keyboard = [[InlineKeyboardButton("Play Latest Game", url=GAME_URL)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Click to play the latest version!', reply_markup=reply_markup)
+    update.message.reply_text('Click the button to play the latest version of the game:', reply_markup=reply_markup)
 
-# Add the command handler to the dispatcher
+# Add command handlers to the dispatcher
 dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("play", play)) # 注册新的命令
+dispatcher.add_handler(CommandHandler("play", play)) # 添加新的 play 命令
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return 'ok'
-
-if __name__ == '__main__':
-    # You need to set up a webhook for your bot to receive updates.
-    # You can do this by sending a POST request to:
-    # https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_WEBHOOK_URL>
-    # Replace <YOUR_BOT_TOKEN> with your bot's token and <YOUR_WEBHOOK_URL> with the URL of your webhook endpoint.
-    # For local development, you can use a tool like ngrok to expose your local server to the internet.
-    app.run(port=5000)

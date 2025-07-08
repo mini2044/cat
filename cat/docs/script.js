@@ -83,6 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
         gridContainer.style.gridTemplateRows = `repeat(${state.rows}, ${state.cellSize}px)`;
     }
 
+    // 监听屏幕方向变化
+    window.addEventListener('orientationchange', resizeCanvasAndGrid);
+    // 监听窗口大小变化
+    window.addEventListener('resize', resizeCanvasAndGrid);
+
     function initGrid() {
         gridContainer.innerHTML = '';
         state.grid = [];
