@@ -96,22 +96,17 @@ body, html {
 }
 
 .game-container {
-    flex-grow: 1; /* 占据剩余所有空间 */
+    flex-grow: 1; /* 让游戏容器填充剩余空间 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     position: relative;
-    border: 2px solid var(--primary-color);
     border-radius: 12px;
-    overflow: hidden;
-    background-color: var(--white-color);
-}
-
-#line-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    pointer-events: none;
+    overflow: hidden; /* 确保背景图片不会超出容器边界 */
+    background-image: url('xinxin_unlike.jpg'); /* 替换背景图片 */
+    background-size: cover; /* 覆盖整个容器 */
+    background-position: center; /* 图片居中显示 */
+    background-repeat: no-repeat; /* 防止图片重复 */
 }
 
 .grid-container {
@@ -121,17 +116,36 @@ body, html {
     width: 100%;
     height: 100%;
     display: grid;
-    z-index: 0;
+    /* z-index is no longer needed here */
+}
+
+#line-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* 允许点击穿透canvas */
+    /* z-index is no longer needed here as stacking context is separated */
 }
 
 .grid-cell {
-    border: 1px solid #e0e0e0;
-    background-color: #fafafa;
-    transition: background-color 0.2s ease;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.3); /* 再次增加不透明度 */
+    backdrop-filter: blur(24px); /* 3倍模糊！ */
+    -webkit-backdrop-filter: blur(24px); /* 兼容 Safari */
+    transition: background-color 0.3s ease;
+}
+
+.grid-cell:hover {
+    background: rgba(255, 255, 255, 0.4);
 }
 
 .grid-cell.clicked {
-    background-color: #a5d6a7; /* 一个更柔和的绿色 */
+    background: transparent; /* 设置为完全透明 */
+    backdrop-filter: none; /* 移除模糊效果 */
+    -webkit-backdrop-filter: none;
 }
 
 /* 手机横屏媒体查询 */

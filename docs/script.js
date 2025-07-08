@@ -3,12 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseBtn = document.getElementById('pause-btn');
     const resumeBtn = document.getElementById('resume-btn');
     const endBtn = document.getElementById('end-btn');
+    const soundToggleBtn = document.getElementById('sound-toggle-btn');
     const scoreEl = document.getElementById('score');
     const distanceEl = document.getElementById('distance');
+    const clearedPercentageEl = document.getElementById('cleared-percentage'); // 新增
     const gameContainer = document.getElementById('game-container');
     const gridContainer = document.getElementById('grid-container');
     const canvas = document.getElementById('line-canvas');
     const ctx = canvas.getContext('2d');
+    const bingoSound = document.getElementById('bingo-sound');
+
+    let confettiInstance = confetti.create(null, { resize: true, useWorker: true });
 
     let state = {
         grid: [],
@@ -16,23 +21,26 @@ document.addEventListener('DOMContentLoaded', () => {
         linePath: [],
         isPaused: false,
         isGameRunning: false,
+        isSoundOn: false,
         rows: 10,
         cols: 20,
         cellSize: 0,
         totalDistance: 0,
         scrollOffset: 0,
-        socketTask: null
+        socketTask: null,
+        revealedPositions: new Set() // 改用 Set 来存储已揭示的屏幕位置
     };
 
     function initializeGame() {
         resizeCanvasAndGrid();
 
-        state.score = 0;
+        state.score = 100; // 初始分数为100
         state.linePath = [];
         state.totalDistance = 0;
         state.scrollOffset = 0;
         state.isPaused = false;
         state.isGameRunning = true;
+        state.revealedPositions.clear(); // 重置已揭示位置集合
 
         updateUI();
         initGrid();
@@ -49,6 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
         endBtn.disabled = false;
+    }
+
+    function toggleSound() {
+        state.isSoundOn = !state.isSoundOn;
+        soundToggleBtn.textContent = `音效：${state.isSoundOn ? '开' : '关'}`;
+        if (state.isSoundOn) {
+            bingoSound.play().catch(e => console.error("Audio unlock failed"));
+            bingoSound.pause();
+            bingoSound.currentTime = 0;
+        }
     }
 
     function resizeCanvasAndGrid() {
@@ -101,20 +119,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = parseInt(e.target.dataset.row);
         const col = parseInt(e.target.dataset.col);
 
-        // 获取当前红线的最新位置
         const lastPoint = state.linePath[state.linePath.length - 1];
         if (col <= lastPoint.x) {
             console.log(`Column ${col} is behind the line, click disabled.`);
-            return; // 如果点击的列在红线后面或当前列，则不允许点击
+            return;
         }
-
-        console.log(`Square clicked at [${row}, ${col}]`);
 
         if (state.grid[row] && state.grid[row][col]) {
+            // 切换格子的点击状态和样式
             state.grid[row][col].clicked = !state.grid[row][col].clicked;
             e.target.classList.toggle('clicked');
-            console.log(`Square at [${row}, ${col}] is now ${state.grid[row][col].clicked ? 'clicked' : 'unclicked'}`);
+
+            // 根据点击行为更新分数
+            if (state.grid[row][col].clicked) {
+                state.score -= 1; // 点击选中，扣1分
+            } else {
+                state.score += 1; // 取消选中，返还1分
+            }
+
+            const screenCol = col - state.scrollOffset;
+            const positionKey = `${row}-${screenCol}`;
+
+            // 只有当这个位置是第一次被揭示时，才增加探索度
+            if (!state.revealedPositions.has(positionKey)) {
+                state.revealedPositions.add(positionKey);
+            }
+            updateUI(); // 每次点击都更新UI以显示分数变化
         }
+    }
+
+    function updateUI() {
+        scoreEl.textContent = state.score.toFixed(1); // 保留一位小数以显示9.9分
+        distanceEl.textContent = state.totalDistance;
+        const totalPositions = state.rows * state.cols; // 屏幕上可见的总格子数
+        const percentage = totalPositions > 0 ? (state.revealedPositions.size / totalPositions) * 100 : 0;
+        clearedPercentageEl.textContent = percentage.toFixed(2);
     }
 
     function connectWebSocket() {
@@ -127,8 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const data = JSON.parse(event.data);
                 if (data && data.k) {
-                    const price = parseFloat(data.k.c);
-                    const targetRow = Math.floor(price * 100) % 10;
+                    const price = parseFloat(data.k.c); // 收盘价
+                    const volume = parseFloat(data.k.v); // 成交量
+                    const turnover = price * volume; // 计算成交额
+
+                    // 提取成交额小数点后第二位
+                    const turnoverDecimal = Math.floor(turnover * 100) % 10;
+
+                    // 计算新的目标行
+                    const targetRow = turnoverDecimal % state.rows;
+                    
                     updateLine(targetRow);
                 }
             } catch (error) {
@@ -146,14 +193,33 @@ document.addEventListener('DOMContentLoaded', () => {
         state.totalDistance++;
 
         if (state.grid[targetRow] && state.grid[targetRow][newX] && state.grid[targetRow][newX].clicked) {
-            state.score++;
-            console.log(`Collision detected at [${targetRow}, ${newX}]! Score: ${state.score}`);
+            state.score += 9.8; // 命中得分
+            if (state.isSoundOn) {
+                bingoSound.currentTime = 0;
+                bingoSound.play();
+            }
+            // 触发烟花效果
+            if (confettiInstance) {
+                const lastPoint = state.linePath[state.linePath.length - 1];
+                const rect = gameContainer.getBoundingClientRect();
+                const x = (rect.left + (lastPoint.x - state.scrollOffset + 0.5) * state.cellSize) / window.innerWidth;
+                const y = (rect.top + (lastPoint.y + 0.5) * state.cellSize) / window.innerHeight;
+            
+                confettiInstance({
+                    particleCount: 150, // 增加粒子数量
+                    spread: 90, // 扩散范围更广
+                    origin: { x, y },
+                    angle: 90,
+                    startVelocity: 40, // 初始速度更快
+                    ticks: 300, // 持续时间更长
+                    gravity: 0.8, // 轻微的重力效果
+                    colors: ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#ff6b81', '#ffffff']
+                });
+            }
         }
 
-        // Scroll logic
         if (newX > state.scrollOffset + state.cols - 5) {
             state.scrollOffset++;
-            // Add new columns to the data grid if needed
             if (state.scrollOffset + state.cols > state.grid[0].length) {
                 for (let i = 0; i < state.rows; i++) {
                     state.grid[i].push({ clicked: false });
@@ -167,14 +233,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawLine() {
+        const dpr = window.devicePixelRatio || 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (state.linePath.length < 2) return;
 
+        ctx.save(); // 保存当前绘图状态
+
         ctx.beginPath();
         ctx.strokeStyle = 'red';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = 'rgba(255, 0, 0, 0.5)';
-        ctx.shadowBlur = 5;
+        ctx.lineWidth = 3 * dpr; // 适配高DPI屏幕
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; // 更深的阴影颜色
+        ctx.shadowBlur = 10; // 更大的模糊范围
+        ctx.shadowOffsetX = 2 * dpr; // X轴偏移
+        ctx.shadowOffsetY = 2 * dpr; // Y轴偏移
 
         state.linePath.forEach((point, index) => {
             const x = (point.x - state.scrollOffset + 0.5) * state.cellSize;
@@ -189,19 +260,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         ctx.stroke();
 
-        const lastPoint = state.linePath[state.linePath.length - 1];
-        const lastX = (lastPoint.x - state.scrollOffset + 0.5) * state.cellSize;
-        const lastY = (lastPoint.y + 0.5) * state.cellSize;
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(lastX, lastY, 5, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.restore(); // 恢复绘图状态，移除阴影效果，以免影响其他绘图
     }
 
+    // 删除这个重复的、错误的 updateUI 函数
+    /*
     function updateUI() {
-        scoreEl.textContent = `Score: ${state.score}`;
-        distanceEl.textContent = `Distance: ${state.totalDistance}`;
+        scoreEl.textContent = state.score;
+        distanceEl.textContent = state.totalDistance;
+        const totalCells = state.rows * state.cols;
+        const percentage = totalCells > 0 ? (state.clickedCells / totalCells) * 100 : 0;
+        clearedPercentageEl.textContent = percentage.toFixed(2);
     }
+    */
 
     function pauseGame() {
         state.isPaused = true;
@@ -228,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pauseBtn.addEventListener('click', pauseGame);
     resumeBtn.addEventListener('click', resumeGame);
     endBtn.addEventListener('click', endGame);
+    soundToggleBtn.addEventListener('click', toggleSound);
     window.addEventListener('resize', () => {
         if (state.isGameRunning) {
             resizeCanvasAndGrid();
@@ -235,4 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             drawLine();
         }
     });
+
+    // Initial setup
+    resizeCanvasAndGrid();
 });
