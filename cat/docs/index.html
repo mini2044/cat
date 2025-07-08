@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ClickBox Game 点击方块游戏</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <header class="game-header">
+            <h1 class="game-title">ClickBox Game</h1>
+            <div class="game-info">
+                <p>Score: <span id="score">0</span></p>
+                <p>Distance: <span id="distance">0</span></p>
+                <p>探索度: <span id="cleared-percentage">0.00</span>%</p>
+            </div>
+            <div class="controls">
+                <button id="sound-toggle-btn">音效：关</button>
+                <button id="start-btn">开始游戏</button>
+                <button id="pause-btn" disabled>暂停</button>
+                <button id="resume-btn" disabled>继续</button>
+                <button id="end-btn" disabled>结束游戏</button>
+            </div>
+        </header>
+        <div class="game-container" id="game-container">
+            <div class="grid-container" id="grid-container"></div>
+            <canvas id="line-canvas"></canvas>
+        </div>
+    </div>
+    <audio id="bingo-sound" src="bingo.mp3" preload="auto"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
