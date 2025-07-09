@@ -18,35 +18,35 @@ body, html {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background: var(--background-color);
     color: var(--font-color);
-    height: 100%;
-    width: 100%;
+    height: 100vh; /* 使用 vh 保证全视口高度 */
+    width: 100vw; /* 使用 vw 保证全视口宽度 */
     overflow: hidden; /* 防止滚动 */
     margin: 0;
     padding: 0;
 }
 
 .main-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
-    height: 100vh; /* 让主容器占满整个屏幕高度 */
-    padding: 5px;
-    box-sizing: border-box;
+    height: 100%;
+    position: relative; /* 为子元素的绝对定位提供基准 */
 }
 
 .game-header {
+    position: absolute; /* 改为绝对定位，浮动在游戏上方 */
+    top: 0;
+    left: 0;
     width: 100%;
     text-align: center;
-    padding: 2px 0;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 4; /* 调整为4，确保在游戏元素之上但不会过度遮挡 */
+    padding: 5px;
+    background: rgba(236, 240, 241, 0.8); /* 半透明背景 */
+    backdrop-filter: blur(5px); /* 增加模糊效果，提升质感 */
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 10; /* 确保在最上层 */
+    box-sizing: border-box;
 }
 
 .game-header h1 {
-    margin: 0;
-    font-size: 1.2em; /* 缩小标题字体 */
+    display: none; /* 隐藏标题，为移动端节省空间 */
 }
 
 .game-info-controls-wrapper {
@@ -54,19 +54,19 @@ body, html {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 5px; /* 减小间距 */
 }
 
 .game-info {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 10px; /* 减小间距 */
-    font-size: 0.8em; /* 缩小字体 */
+    gap: 8px; /* 调整间距 */
+    font-size: 0.75em; /* 进一步缩小字体 */
 }
 
 .controls {
-    margin: 2px 0; /* 极大缩小边距 */
+    margin: 0; /* 移除外边距 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -74,9 +74,9 @@ body, html {
 }
 
 .controls button {
-    margin: 2px 4px; /* 缩小元素间距 */
-    font-size: 0.8em; /* 缩小字体 */
-    padding: 5px 10px; /* 调整按钮大小 */
+    margin: 2px; /* 进一步缩小间距 */
+    font-size: 0.75em; /* 进一步缩小字体 */
+    padding: 5px 8px; /* 调整内边距 */
     color: var(--white-color);
     background-image: linear-gradient(45deg, var(--primary-color), #8e44ad);
     border: none;
@@ -103,9 +103,9 @@ body, html {
     opacity: 0.7;
 }
 
-#game-container { /* 修正选择器，从 .game-container 改为 #game-container */
+#game-container { 
     width: 100%;
-    flex-grow: 1;
+    height: 100%; /* 占满整个容器 */
     display: flex;
     justify-content: center;
     align-items: center;
