@@ -12,8 +12,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('line-canvas');
     const ctx = canvas.getContext('2d');
     const bingoSound = document.getElementById('bingo-sound');
+    const gameTitle = document.getElementById('game-title');
 
-    let confettiInstance = confetti.create(null, { resize: true, useWorker: true });
+    // 特殊功能按钮
+    const largeBtn = document.getElementById('large-btn');
+    const littleBtn = document.getElementById('little-btn');
+    const singleBtn = document.getElementById('single-btn');
+    const doubleBtn = document.getElementById('double-btn');
+
+    // 将 confetti canvas 附加到 game-container
+    const confettiCanvas = document.createElement('canvas');
+    confettiCanvas.id = 'confetti-canvas';
+    // 直接在这里设置样式，确保 z-index 和定位正确
+    confettiCanvas.style.position = 'absolute';
+    confettiCanvas.style.top = '0';
+    confettiCanvas.style.left = '0';
+    confettiCanvas.style.width = '100%';
+    confettiCanvas.style.height = '100%';
+    confettiCanvas.style.pointerEvents = 'none'; // 允许点击穿透
+    confettiCanvas.style.zIndex = '1'; // 设置一个较低的 z-index
+
+    gameContainer.appendChild(confettiCanvas);
+    let confettiInstance = confetti.create(confettiCanvas, { resize: true, useWorker: true });
 
     let state = {
         grid: [],
@@ -28,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
         totalDistance: 0,
         scrollOffset: 0,
         socketTask: null,
-        revealedPositions: new Set() // 改用 Set 来存储已揭示的屏幕位置
+        revealedPositions: new Set(), // 改用 Set 来存储已揭示的屏幕位置
+        specialButtonClicked: false // 新增：标记特殊按钮是否被点击
     };
 
     function initializeGame() {
@@ -41,6 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
         state.isPaused = false;
         state.isGameRunning = true;
         state.revealedPositions.clear(); // 重置已揭示位置集合
+        state.specialButtonClicked = false; // 重置特殊按钮标记
+
+        gameContainer.classList.add('game-started'); // 添加背景图类
+        gameTitle.style.display = 'none'; // 隐藏标题
 
         updateUI();
         initGrid();
@@ -81,6 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
         state.cols = Math.floor(gameContainer.clientWidth / state.cellSize);
         gridContainer.style.gridTemplateColumns = `repeat(${state.cols}, ${state.cellSize}px)`;
         gridContainer.style.gridTemplateRows = `repeat(${state.rows}, ${state.cellSize}px)`;
+
+        // 动态调整特殊按钮大小
+        const specialButtons = document.querySelectorAll('#special-controls button');
+        const specialControlsContainer = document.getElementById('special-controls');
+        const buttonSize = state.cellSize * 0.8;
+        const containerSize = buttonSize * 3 + 10; // 3个按钮 + 2个gap
+
+        specialControlsContainer.style.width = `${containerSize}px`;
+        specialControlsContainer.style.height = `${containerSize}px`;
+
+        specialButtons.forEach(btn => {
+            btn.style.width = `${buttonSize}px`;
+            btn.style.height = `${buttonSize}px`;
+        });
     }
 
     // 监听屏幕方向变化
@@ -130,6 +169,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // 如果特殊按钮在本回合已经点击过，则普通点击无效
+        if (state.specialButtonClicked) {
+            console.log("Special action already taken for this turn. Regular click disabled.");
+            return;
+        }
+
         if (state.grid[row] && state.grid[row][col]) {
             // 切换格子的点击状态和样式
             state.grid[row][col].clicked = !state.grid[row][col].clicked;
@@ -159,6 +204,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalPositions = state.rows * state.cols; // 屏幕上可见的总格子数
         const percentage = totalPositions > 0 ? (state.revealedPositions.size / totalPositions) * 100 : 0;
         clearedPercentageEl.textContent = percentage.toFixed(2);
+    }
+
+    function handleSpecialClick(rowsToClick) {
+        if (!state.isGameRunning || state.isPaused || state.specialButtonClicked) return;
+
+        state.score -= 5;
+        state.specialButtonClicked = true; // 标记已使用特殊按钮
+        updateUI();
+
+        const nextCol = state.linePath[state.linePath.length - 1].x + 1;
+
+        rowsToClick.forEach(row => {
+            if (state.grid[row] && state.grid[row][nextCol] && !state.grid[row][nextCol].clicked) {
+                state.grid[row][nextCol].clicked = true;
+
+                // 更新视觉效果
+                const cell = gridContainer.querySelector(`[data-row='${row}'][data-col='${nextCol}']`);
+                if (cell) {
+                    cell.classList.add('clicked');
+                }
+
+                // 将点击的格子计入探索度
+                const screenCol = nextCol - state.scrollOffset;
+                const positionKey = `${row}-${screenCol}`;
+                if (!state.revealedPositions.has(positionKey)) {
+                    state.revealedPositions.add(positionKey);
+                }
+            }
+        });
+        updateUI(); // 更新探索度百分比显示
     }
 
     function connectWebSocket() {
@@ -196,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newX = lastPoint.x + 1;
         state.linePath.push({ x: newX, y: targetRow });
         state.totalDistance++;
+        state.specialButtonClicked = false; // 新的一列，重置特殊按钮标记
 
         if (state.grid[targetRow] && state.grid[targetRow][newX] && state.grid[targetRow][newX].clicked) {
             state.score += 9.8; // 命中得分
@@ -293,11 +369,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function endGame() {
         state.isGameRunning = false;
-        if (state.socketTask) state.socketTask.close();
+        if (state.socketTask) {
+            state.socketTask.close();
+        }
         startBtn.disabled = false;
         pauseBtn.disabled = true;
         resumeBtn.disabled = true;
         endBtn.disabled = true;
+        gameTitle.style.display = 'block'; // 恢复标题显示
+        gameContainer.classList.remove('game-started'); // 移除背景图类
+        gridContainer.innerHTML = ''; // 清空网格
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // 清空线条
     }
 
     startBtn.addEventListener('click', initializeGame);
@@ -305,6 +387,12 @@ document.addEventListener('DOMContentLoaded', () => {
     resumeBtn.addEventListener('click', resumeGame);
     endBtn.addEventListener('click', endGame);
     soundToggleBtn.addEventListener('click', toggleSound);
+
+    largeBtn.addEventListener('click', () => handleSpecialClick([0, 1, 2, 3, 4]));
+    littleBtn.addEventListener('click', () => handleSpecialClick([5, 6, 7, 8, 9]));
+    singleBtn.addEventListener('click', () => handleSpecialClick([1, 3, 5, 7, 9]));
+    doubleBtn.addEventListener('click', () => handleSpecialClick([0, 2, 4, 6, 8]));
+
     window.addEventListener('resize', () => {
         if (state.isGameRunning) {
             resizeCanvasAndGrid();
